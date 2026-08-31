@@ -601,10 +601,18 @@ let QUESTIONS = loadQuestions();
 // 선생님이 배포한 구글 앱스 스크립트 웹앱 주소 (제출 시 이 주소로 결과가 자동 전송됩니다)
 // 코드를 직접 수정할 필요 없이, 앱 화면의 "구글시트 연결하기" 화면에서 링크를 붙여넣으면
 // 자동으로 이 값이 채워지고 브라우저에 저장됩니다.
+// [중요] Vercel에 배포한 기본 주소를 어떤 컴퓨터에서 열어도 바로 결과를 받으려면
+// 아래 BUILT_IN_SHEET_WEBAPP_URL에 Apps Script 웹앱 주소를 한 번만 넣고 배포하세요.
+// 예: const BUILT_IN_SHEET_WEBAPP_URL = 'https://script.google.com/macros/s/...../exec';
+// 비워 두면 기존처럼 각 브라우저에서 한 번씩 연결해야 합니다.
+const BUILT_IN_SHEET_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzt1xaa8Asw22jIob5o6PUefY2V5QgaHVO_JIpYNwoDkKXKp5sjghnrjP-h8vUKY40hbA/exec';
+
 function loadSheetUrl(){
   try{
-    return localStorage.getItem('sheetWebAppUrl') || '';
-  }catch(e){ return ''; }
+    // 브라우저에서 '구글 링크 변경'을 한 경우 그 값을 우선 사용하고,
+    // 없으면 배포 파일에 고정한 기본 주소를 사용합니다.
+    return localStorage.getItem('sheetWebAppUrl') || BUILT_IN_SHEET_WEBAPP_URL || '';
+  }catch(e){ return BUILT_IN_SHEET_WEBAPP_URL || ''; }
 }
 let SHEET_WEBAPP_URL = loadSheetUrl();
 
@@ -1052,13 +1060,22 @@ function showScreen(id){
 }
 
 // ---------- events ----------
-$('startBtn').addEventListener('click', () => {
+$('startBtn').addEventListener('click', async () => {
   const name = $('nameInput').value.trim();
   if(!name){
     $('nameInput').style.borderColor = '#FF7A8A';
     $('nameInput').placeholder = '이름을 입력해주세요!';
     return;
   }
+  const btn = $('startBtn');
+  const oldText = btn.textContent;
+  btn.disabled = true;
+  if(isConfigured()){
+    btn.textContent = '최신 문장 확인 중...';
+    await syncQuestionsFromServer();
+  }
+  btn.disabled = false;
+  btn.textContent = oldText;
   studentName = name;
   currentIndex = 0;
   sessionResults = [];
@@ -1120,7 +1137,9 @@ function fetchJSONP(url){
       if(!settled){ cleanup(); reject(new Error('JSONP load failed')); }
     };
     const sep = url.indexOf('?') === -1 ? '?' : '&';
-    script.src = url + sep + 'callback=' + cbName;
+    // Apps Script/브라우저 캐시 때문에 예전 문장이 보이는 일을 막기 위해
+    // 매 요청마다 고유한 cache-buster 값을 붙입니다.
+    script.src = url + sep + 'callback=' + cbName + '&_ts=' + Date.now();
     document.body.appendChild(script);
     setTimeout(() => {
       if(!settled){ cleanup(); reject(new Error('JSONP timeout')); }
@@ -1251,21 +1270,25 @@ async function saveQuestionsFromInput(){
     console.error('failed to save custom questions', e);
   }
 
-  // 구글시트가 연결되어 있으면, 문장 목록을 그 시트에도 저장해서
-  // 브라우저 저장공간이 지워져도 항상 최신 문장을 불러올 수 있게 합니다.
+  // 구글시트가 연결되어 있으면 문장 목록을 시트에도 저장합니다.
+  // no-cors POST는 '전송 완료'와 '서버 저장 완료' 시점이 다를 수 있으므로,
+  // 저장 직후 서버에서 같은 문장이 확인될 때까지 짧게 재확인합니다.
+  let serverConfirmed = !isConfigured();
   if(isConfigured()){
     try{
       await fetch(SHEET_WEBAPP_URL, {
         method: 'POST',
         mode: 'no-cors',
-        body: JSON.stringify({ action: 'saveQuestions', questions: items })
+        cache: 'no-store',
+        body: JSON.stringify({ action: 'saveQuestions', questions: items, version: Date.now() })
       });
+      serverConfirmed = await waitForServerQuestions(items);
     }catch(e){
       console.error('failed to save questions to sheet', e);
     }
   }
 
-  notice.innerHTML = `<div class="notice" style="background:rgba(110,231,183,0.12);border-color:rgba(110,231,183,0.35);color:#0e4a34;margin-top:12px;">저장됐어요! 총 ${items.length}개 문장으로 설정됐습니다.${isConfigured() ? ' 구글시트에도 저장돼서 다른 기기에도 그대로 반영돼요.' : ''}</div>`;
+  notice.innerHTML = `<div class="notice" style="background:rgba(110,231,183,0.12);border-color:rgba(110,231,183,0.35);color:#0e4a34;margin-top:12px;">저장됐어요! 총 ${items.length}개 문장으로 설정됐습니다.${isConfigured() ? (serverConfirmed ? ' 다른 기기에도 최신 문장이 바로 반영됩니다.' : ' 이 기기에는 저장됐어요. 서버 반영이 조금 늦을 수 있어 잠시 뒤 다시 확인해 주세요.') : ''}</div>`;
   $('saveQuestionsBtn').disabled = false;
   $('resetDefaultQuestionsBtn').disabled = false;
   $('backFromSettingsBtn').disabled = false;
@@ -1443,6 +1466,35 @@ $('resetResultsBtn').addEventListener('click', async () => {
   btn.disabled = false;
 });
 
+
+function sameQuestionList(a, b){
+  if(!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+  return a.every((q, i) => String(q.en || '').trim() === String(b[i].en || '').trim());
+}
+
+function sleep(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
+
+// Apps Script 저장 직후 다른 기기에서 옛 문장이 보이지 않도록 서버 반영을 확인합니다.
+async function waitForServerQuestions(expected){
+  for(let attempt = 0; attempt < 6; attempt++){
+    if(attempt > 0) await sleep(650 + attempt * 250);
+    try{
+      const data = await fetchJSONP(SHEET_WEBAPP_URL + '?action=questions&fresh=' + Date.now());
+      if(Array.isArray(data) && sameQuestionList(data, expected)){
+        QUESTIONS = data;
+        try{
+          localStorage.setItem('customQuestions', JSON.stringify(data));
+          localStorage.setItem('customQuestionsVersion', String(Date.now()));
+        }catch(e){}
+        return true;
+      }
+    }catch(e){
+      console.warn('question sync confirmation attempt failed', attempt + 1, e);
+    }
+  }
+  return false;
+}
+
 // ---------- init ----------
 if(!speechSupported){
   $('supportNotice').innerHTML = `<div class="notice" style="margin-top:14px;">이 브라우저는 음성 인식(따라 읽기)을 지원하지 않아요. <b>크롬(Chrome)</b> 브라우저에서 열어주세요. 아이폰의 사파리(Safari)에서는 따라 읽기가 작동하지 않을 수 있어요.</div>`;
@@ -1459,9 +1511,10 @@ function isSkipped(){
 // "구글시트 자체"에서 항상 새로 불러옵니다. 이렇게 하면 컴퓨터가
 // 매일 초기화되거나 저장공간이 지워져도 문장이 사라지지 않아요.
 async function syncQuestionsFromServer(){
-  if(!isConfigured()) return;
+  if(!isConfigured()) return false;
   try{
-    const url = SHEET_WEBAPP_URL + '?action=questions';
+    // fresh 값을 붙여 브라우저/중간 캐시를 우회합니다.
+    const url = SHEET_WEBAPP_URL + '?action=questions&fresh=' + Date.now();
     const data = await fetchJSONP(url);
     if(Array.isArray(data) && data.length > 0){
       QUESTIONS = data;
@@ -1469,13 +1522,21 @@ async function syncQuestionsFromServer(){
         localStorage.setItem('customQuestions', JSON.stringify(data));
         localStorage.setItem('customQuestionsVersion', String(Date.now()));
       }catch(e){}
+      return true;
     }
   }catch(e){
     console.error('failed to sync questions from server', e);
     // 실패해도 로컬에 저장된 문장(또는 기본 문장)으로 계속 진행합니다.
   }
+  return false;
 }
+// 첫 화면이 뜬 직후 서버의 최신 문장을 가져옵니다.
 syncQuestionsFromServer();
+// 다른 탭/창을 다녀왔다가 돌아왔을 때도 최신 문장을 다시 확인합니다.
+window.addEventListener('focus', () => { syncQuestionsFromServer(); });
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible') syncQuestionsFromServer();
+});
 
 function showStartScreenState(){
   if(isConfigured()){
