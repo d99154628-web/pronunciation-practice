@@ -366,20 +366,22 @@
 <div class="app">
   <div class="brand">
     <svg class="mascot-header" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
-      <rect x="78" y="185" width="16" height="24" rx="8" fill="#4A4460"/>
-      <rect x="106" y="185" width="16" height="24" rx="8" fill="#4A4460"/>
-      <rect x="42" y="118" width="16" height="46" rx="8" fill="#6C5DD3"/>
-      <rect x="142" y="118" width="16" height="46" rx="8" fill="#6C5DD3"/>
-      <circle cx="50" cy="168" r="10" fill="#FFDCA8"/>
-      <circle cx="150" cy="168" r="10" fill="#FFDCA8"/>
-      <rect x="58" y="110" width="84" height="80" rx="28" fill="#6C5DD3"/>
-      <circle cx="100" cy="80" r="52" fill="#FFDCA8"/>
-      <path d="M48 78 Q50 20 100 20 Q150 20 152 78 Q140 55 100 55 Q60 55 48 78 Z" fill="#4A3AAE"/>
-      <circle cx="70" cy="95" r="8" fill="#FF9CB0" opacity="0.6"/>
-      <circle cx="130" cy="95" r="8" fill="#FF9CB0" opacity="0.6"/>
-      <circle cx="82" cy="82" r="5.5" fill="#2A2540"/>
-      <circle cx="118" cy="82" r="5.5" fill="#2A2540"/>
-      <path d="M88 100 Q100 108 112 100" stroke="#2A2540" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      <ellipse cx="72" cy="188" rx="17" ry="12" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4"/>
+      <ellipse cx="128" cy="188" rx="17" ry="12" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4"/>
+      <ellipse cx="36" cy="135" rx="13" ry="20" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4"/>
+      <ellipse cx="164" cy="135" rx="13" ry="20" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4"/>
+      <circle cx="72" cy="78" r="30" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4"/>
+      <circle cx="100" cy="64" r="34" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4"/>
+      <circle cx="128" cy="78" r="30" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4"/>
+      <rect x="46" y="90" width="108" height="98" rx="46" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4"/>
+      <path d="M82 40 L64 28 L64 52 Z" fill="#6C5DD3"/>
+      <path d="M118 40 L136 28 L136 52 Z" fill="#6C5DD3"/>
+      <circle cx="100" cy="40" r="8" fill="#5847C0"/>
+      <circle cx="70" cy="128" r="9" fill="#FFB3C1" opacity="0.6"/>
+      <circle cx="130" cy="128" r="9" fill="#FFB3C1" opacity="0.6"/>
+      <circle cx="82" cy="112" r="5.5" fill="#2A2540"/>
+      <circle cx="118" cy="112" r="5.5" fill="#2A2540"/>
+      <path d="M90 136 Q100 143 110 136" stroke="#2A2540" stroke-width="3.5" fill="none" stroke-linecap="round"/>
     </svg>
     <div class="brand-text">
       <h1>영어 발음 연습</h1>
@@ -484,6 +486,7 @@
       <div class="mic-wrap">
         <button class="mic-btn" id="micBtn">🎤</button>
         <div class="mic-status" id="micStatus">버튼을 눌러 따라 읽어보세요</div>
+        <button class="link-small" id="skipQuestionBtn" style="display:none;">🙈 이 문항은 건너뛰고 다음으로</button>
       </div>
 
       <div id="noticeArea"></div>
@@ -501,37 +504,40 @@
         </div>
         <div class="mascot-pair">
           <svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
-            <rect x="78" y="185" width="16" height="24" rx="8" fill="#4A4460"/>
-            <rect x="106" y="185" width="16" height="24" rx="8" fill="#4A4460"/>
-            <rect x="30" y="70" width="16" height="46" rx="8" fill="#FF6B93" transform="rotate(-40 38 116)"/>
-            <rect x="154" y="70" width="16" height="46" rx="8" fill="#FF6B93" transform="rotate(40 162 116)"/>
-            <circle cx="30" cy="72" r="10" fill="#FFDCA8"/>
-            <circle cx="170" cy="72" r="10" fill="#FFDCA8"/>
-            <rect x="58" y="110" width="84" height="80" rx="28" fill="#FF6B93"/>
-            <circle cx="100" cy="80" r="52" fill="#FFDCA8"/>
-            <path d="M46 82 Q48 18 100 18 Q152 18 154 82 Q145 50 100 50 Q55 50 46 82 Z" fill="#C23A5B"/>
-            <circle cx="70" cy="97" r="8" fill="#FFB0C4" opacity="0.7"/>
-            <circle cx="130" cy="97" r="8" fill="#FFB0C4" opacity="0.7"/>
-            <path d="M74 80 Q82 70 90 80" stroke="#2A2540" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-            <path d="M110 80 Q118 70 126 80" stroke="#2A2540" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-            <path d="M82 100 Q100 122 118 100 Q100 112 82 100 Z" fill="#2A2540"/>
+            <ellipse cx="72" cy="188" rx="17" ry="12" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4"/>
+            <ellipse cx="128" cy="188" rx="17" ry="12" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4"/>
+            <ellipse cx="36" cy="135" rx="13" ry="22" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4" transform="rotate(-55 46 112)"/>
+            <ellipse cx="164" cy="135" rx="13" ry="22" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4" transform="rotate(55 154 112)"/>
+            <circle cx="72" cy="78" r="30" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4"/>
+            <circle cx="100" cy="64" r="34" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4"/>
+            <circle cx="128" cy="78" r="30" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4"/>
+            <rect x="46" y="90" width="108" height="98" rx="46" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4"/>
+            <path d="M82 40 L64 28 L64 52 Z" fill="#FF6B93"/>
+            <path d="M118 40 L136 28 L136 52 Z" fill="#FF6B93"/>
+            <circle cx="100" cy="40" r="8" fill="#E8547C"/>
+            <circle cx="70" cy="128" r="10" fill="#FFB3C1" opacity="0.7"/>
+            <circle cx="130" cy="128" r="10" fill="#FFB3C1" opacity="0.7"/>
+            <path d="M72 108 Q82 96 92 108" stroke="#2A2540" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <path d="M108 108 Q118 96 128 108" stroke="#2A2540" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <path d="M85 128 Q100 148 115 128 Q100 140 85 128 Z" fill="#2A2540"/>
           </svg>
           <svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
-            <rect x="78" y="185" width="16" height="24" rx="8" fill="#4A4460"/>
-            <rect x="106" y="185" width="16" height="24" rx="8" fill="#4A4460"/>
-            <rect x="30" y="70" width="16" height="46" rx="8" fill="#3DD598" transform="rotate(-40 38 116)"/>
-            <rect x="154" y="70" width="16" height="46" rx="8" fill="#3DD598" transform="rotate(40 162 116)"/>
-            <circle cx="30" cy="72" r="10" fill="#FFDCA8"/>
-            <circle cx="170" cy="72" r="10" fill="#FFDCA8"/>
-            <rect x="58" y="110" width="84" height="80" rx="28" fill="#3DD598"/>
-            <circle cx="100" cy="80" r="52" fill="#FFDCA8"/>
-            <path d="M44 62 Q48 20 100 20 Q152 20 156 62 Q100 46 44 62 Z" fill="#2CB983"/>
-            <rect x="94" y="14" width="12" height="14" rx="4" fill="#2CB983"/>
-            <circle cx="70" cy="97" r="8" fill="#FFB199" opacity="0.5"/>
-            <circle cx="130" cy="97" r="8" fill="#FFB199" opacity="0.5"/>
-            <path d="M74 80 Q82 70 90 80" stroke="#2A2540" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-            <path d="M110 80 Q118 70 126 80" stroke="#2A2540" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-            <path d="M82 100 Q100 122 118 100 Q100 112 82 100 Z" fill="#2A2540"/>
+            <ellipse cx="72" cy="188" rx="17" ry="12" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4"/>
+            <ellipse cx="128" cy="188" rx="17" ry="12" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4"/>
+            <ellipse cx="36" cy="135" rx="13" ry="22" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4" transform="rotate(-55 46 112)"/>
+            <ellipse cx="164" cy="135" rx="13" ry="22" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4" transform="rotate(55 154 112)"/>
+            <circle cx="72" cy="78" r="30" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4"/>
+            <circle cx="100" cy="64" r="34" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4"/>
+            <circle cx="128" cy="78" r="30" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4"/>
+            <rect x="46" y="90" width="108" height="98" rx="46" fill="#FFFFFF" stroke="#E3E1F0" stroke-width="4"/>
+            <path d="M82 40 L64 28 L64 52 Z" fill="#3DD598"/>
+            <path d="M118 40 L136 28 L136 52 Z" fill="#3DD598"/>
+            <circle cx="100" cy="40" r="8" fill="#2CB983"/>
+            <circle cx="70" cy="128" r="10" fill="#FFB3C1" opacity="0.6"/>
+            <circle cx="130" cy="128" r="10" fill="#FFB3C1" opacity="0.6"/>
+            <path d="M72 108 Q82 96 92 108" stroke="#2A2540" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <path d="M108 108 Q118 96 128 108" stroke="#2A2540" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <path d="M85 128 Q100 148 115 128 Q100 140 85 128 Z" fill="#2A2540"/>
           </svg>
         </div>
       </div>
@@ -601,18 +607,13 @@ let QUESTIONS = loadQuestions();
 // 선생님이 배포한 구글 앱스 스크립트 웹앱 주소 (제출 시 이 주소로 결과가 자동 전송됩니다)
 // 코드를 직접 수정할 필요 없이, 앱 화면의 "구글시트 연결하기" 화면에서 링크를 붙여넣으면
 // 자동으로 이 값이 채워지고 브라우저에 저장됩니다.
-// [중요] Vercel에 배포한 기본 주소를 어떤 컴퓨터에서 열어도 바로 결과를 받으려면
-// 아래 BUILT_IN_SHEET_WEBAPP_URL에 Apps Script 웹앱 주소를 한 번만 넣고 배포하세요.
-// 예: const BUILT_IN_SHEET_WEBAPP_URL = 'https://script.google.com/macros/s/...../exec';
-// 비워 두면 기존처럼 각 브라우저에서 한 번씩 연결해야 합니다.
-const BUILT_IN_SHEET_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzt1xaa8Asw22jIob5o6PUefY2V5QgaHVO_JIpYNwoDkKXKp5sjghnrjP-h8vUKY40hbA/exec';
-
 function loadSheetUrl(){
   try{
-    // 브라우저에서 '구글 링크 변경'을 한 경우 그 값을 우선 사용하고,
-    // 없으면 배포 파일에 고정한 기본 주소를 사용합니다.
-    return localStorage.getItem('sheetWebAppUrl') || BUILT_IN_SHEET_WEBAPP_URL || '';
-  }catch(e){ return BUILT_IN_SHEET_WEBAPP_URL || ''; }
+    const saved = localStorage.getItem('sheetWebAppUrl');
+    if(saved) return saved;
+  }catch(e){}
+  // 선생님이 실제로 쓰시는 구글 앱스 스크립트 주소를 기본값으로 넣어뒀어요.
+  return "https://script.google.com/macros/s/AKfycbzt1xaa8Asw22jIob5o6PUefY2V5QgaHVO_JIpYNwoDkKXKp5sjghnrjP-h8vUKY40hbA/exec";
 }
 let SHEET_WEBAPP_URL = loadSheetUrl();
 
@@ -703,12 +704,16 @@ let sessionResults = [];
 let recognizing = false;
 let recognition = null;
 let finalHandled = false;
+let noSpeechRetryUsed = false;
+let attemptCount = 0;
+let recognitionTimeoutId = null;
 
 const $ = (id) => document.getElementById(id);
 
 // ---------- result summary text ----------
 function buildSummaryText(){
-  const avg = Math.round(sessionResults.reduce((a,r)=>a+r.overall,0) / sessionResults.length);
+  const completed = sessionResults.filter(r => r);
+  const avg = completed.length > 0 ? Math.round(completed.reduce((a,r)=>a+r.overall,0) / completed.length) : 0;
   return `이름: ${studentName} / 평균점수: ${avg}점`;
 }
 async function copyToClipboard(text){
@@ -857,7 +862,7 @@ function buildRecognition(){
   const r = new SR();
   r.lang = 'en-US';
   r.interimResults = true;
-  r.maxAlternatives = 1;
+  r.maxAlternatives = 5;
   r.continuous = false;
   return r;
 }
@@ -883,10 +888,28 @@ function updateLiveHighlight(transcript){
   });
 }
 
-function startRecording(){
+function clearRecognitionTimeout(){
+  if(recognitionTimeoutId){
+    clearTimeout(recognitionTimeoutId);
+    recognitionTimeoutId = null;
+  }
+}
+
+function maybeShowSkipButton(){
+  if(attemptCount >= 2){
+    $('skipQuestionBtn').style.display = 'block';
+  }
+}
+
+function startRecording(isRetry){
   if(!speechSupported){
     showNotice("이 브라우저는 음성 인식을 지원하지 않아요. 크롬(Chrome) 브라우저로 접속해주세요.");
     return;
+  }
+  if(!isRetry){
+    attemptCount++;
+    noSpeechRetryUsed = false;
+    maybeShowSkipButton();
   }
   clearNotice();
   $('resultPanel').style.display = 'none';
@@ -899,47 +922,71 @@ function startRecording(){
     $('micBtn').classList.add('recording');
     $('micStatus').textContent = "듣고 있어요...";
     $('micBtn').disabled = false;
+    clearRecognitionTimeout();
+    // 브라우저가 어떤 이유로든 결과를 아예 안 주는 경우를 대비한 안전장치입니다.
+    recognitionTimeoutId = setTimeout(() => {
+      if(recognizing && !finalHandled){
+        try{ recognition.stop(); }catch(e){}
+      }
+    }, 10000);
   };
 
   recognition.onresult = (event) => {
     let interim = "";
-    let final = "";
+    let finalAlternatives = null;
     for(let i = event.resultIndex; i < event.results.length; i++){
-      const transcriptPiece = event.results[i][0].transcript;
-      if(event.results[i].isFinal){
-        final += transcriptPiece;
+      const result = event.results[i];
+      if(result.isFinal){
+        finalAlternatives = [];
+        for(let j = 0; j < result.length; j++){
+          finalAlternatives.push(result[j].transcript);
+        }
       } else {
-        interim += transcriptPiece;
+        interim += result[0].transcript;
       }
     }
-    const combined = (final + " " + interim).trim();
-    if(combined) updateLiveHighlight(combined);
-    if(final && !finalHandled){
+    if(interim) updateLiveHighlight(interim);
+    if(finalAlternatives && !finalHandled){
       finalHandled = true;
-      finishRecording(final.trim());
+      clearRecognitionTimeout();
+      finishRecording(finalAlternatives);
     }
   };
 
   recognition.onerror = (event) => {
     recognizing = false;
     $('micBtn').classList.remove('recording');
+    clearRecognitionTimeout();
+
     if(event.error === 'not-allowed' || event.error === 'service-not-allowed'){
       showNotice("마이크 권한이 차단되어 있어요. 주소창의 자물쇠 아이콘을 눌러 마이크를 '허용'으로 바꾸고 새로고침한 뒤 다시 시도해주세요.");
       $('micStatus').textContent = "권한이 필요해요";
     } else if(event.error === 'no-speech'){
+      if(!noSpeechRetryUsed){
+        // 한 번은 조용히 자동으로 다시 들어봅니다 (아이들이 말하기 시작하는 타이밍이 늦는 경우가 많아요).
+        noSpeechRetryUsed = true;
+        $('micStatus').textContent = "다시 듣는 중...";
+        setTimeout(() => { if(!finalHandled) startRecording(true); }, 250);
+        return;
+      }
       showNotice("음성이 들리지 않았어요. 마이크에 가까이서 다시 말해보세요.");
       $('micStatus').textContent = "다시 눌러서 시도해보세요";
+    } else if(event.error === 'aborted'){
+      $('micStatus').textContent = "버튼을 눌러 다시 시도해보세요";
     } else {
       showNotice("녹음 중 문제가 생겼어요. 다시 시도해주세요.");
       $('micStatus').textContent = "다시 눌러서 시도해보세요";
     }
+    maybeShowSkipButton();
   };
 
   recognition.onend = () => {
     recognizing = false;
     $('micBtn').classList.remove('recording');
+    clearRecognitionTimeout();
     if(!finalHandled){
       $('micStatus').textContent = "다시 눌러서 시도해보세요";
+      maybeShowSkipButton();
     }
   };
 
@@ -947,6 +994,7 @@ function startRecording(){
     recognition.start();
   }catch(e){
     showNotice("마이크를 시작할 수 없어요. 잠시 후 다시 시도해주세요.");
+    maybeShowSkipButton();
   }
 }
 
@@ -956,21 +1004,37 @@ function stopRecording(){
   }
 }
 
-function finishRecording(transcript){
+function finishRecording(transcriptOrAlternatives){
   $('micStatus').textContent = "채점 완료!";
-  const results = scoreAgainstTranscript(QUESTIONS[currentIndex].en, transcript);
-  results.forEach(r => r.matched && (r.status = r.status)); // no-op, keep for clarity
-  const overall = overallFrom(results);
-  updateLiveHighlight(transcript);
+
+  // maxAlternatives로 여러 인식 후보를 받았으면, 목표 문장과 가장 잘 맞는
+  // 후보를 골라 채점합니다. 이렇게 하면 1순위 인식 결과가 살짝 어긋나도
+  // 더 정확했던 다른 후보로 점수를 매길 수 있어요.
+  const alternatives = Array.isArray(transcriptOrAlternatives) ? transcriptOrAlternatives : [transcriptOrAlternatives];
+  let bestTranscript = alternatives[0] || "";
+  let bestResults = scoreAgainstTranscript(QUESTIONS[currentIndex].en, bestTranscript);
+  let bestOverall = overallFrom(bestResults);
+
+  for(let i = 1; i < alternatives.length; i++){
+    const candidateResults = scoreAgainstTranscript(QUESTIONS[currentIndex].en, alternatives[i]);
+    const candidateOverall = overallFrom(candidateResults);
+    if(candidateOverall > bestOverall){
+      bestOverall = candidateOverall;
+      bestResults = candidateResults;
+      bestTranscript = alternatives[i];
+    }
+  }
+
+  updateLiveHighlight(bestTranscript);
 
   sessionResults[currentIndex] = {
     question: QUESTIONS[currentIndex].en,
-    transcript,
-    wordResults: results,
-    overall
+    transcript: bestTranscript,
+    wordResults: bestResults,
+    overall: bestOverall
   };
 
-  renderResultPanel(results, overall, transcript);
+  renderResultPanel(bestResults, bestOverall, bestTranscript);
 }
 
 function renderResultPanel(results, overall, transcript){
@@ -1025,6 +1089,23 @@ function renderProgressDots(){
   }).join('');
 }
 
+function skipQuestion(){
+  if(recognition){
+    try{ recognition.abort(); }catch(e){}
+  }
+  clearRecognitionTimeout();
+  recognizing = false;
+  finalHandled = true;
+  sessionResults[currentIndex] = null;
+
+  if(currentIndex === QUESTIONS.length - 1){
+    goToDone();
+  } else {
+    currentIndex++;
+    loadQuestion();
+  }
+}
+
 function loadQuestion(){
   renderProgressDots();
   $('qCounter').textContent = `문항 ${currentIndex+1} / ${QUESTIONS.length}`;
@@ -1033,11 +1114,14 @@ function loadQuestion(){
   $('micStatus').textContent = "버튼을 눌러 따라 읽어보세요";
   clearNotice();
   $('micBtn').disabled = !speechSupported;
+  attemptCount = 0;
+  $('skipQuestionBtn').style.display = 'none';
 }
 
 function goToDone(){
   showScreen('screen-done');
-  const avg = Math.round(sessionResults.reduce((a,r)=>a+r.overall,0) / sessionResults.length);
+  const completed = sessionResults.filter(r => r);
+  const avg = completed.length > 0 ? Math.round(completed.reduce((a,r)=>a+r.overall,0) / completed.length) : 0;
   $('summaryBox').textContent = buildSummaryText();
   const lines = praiseLinesFor(avg);
   $('praiseLine1').textContent = lines[0];
@@ -1046,6 +1130,8 @@ function goToDone(){
   if(isConfigured()){
     $('doneSummary').textContent = `${studentName} 학생의 평균 점수는 ${avg}점이에요. 아래 순서대로 결과를 제출해주세요.`;
     $('submitBtn').style.display = 'block';
+    $('submitBtn').disabled = false;
+    $('submitBtn').textContent = '제출하기 →';
     $('submitNotice').innerHTML = '';
   } else {
     $('doneSummary').textContent = `${studentName} 학생의 평균 점수는 ${avg}점이에요. 수고했어요!`;
@@ -1060,25 +1146,16 @@ function showScreen(id){
 }
 
 // ---------- events ----------
-$('startBtn').addEventListener('click', async () => {
+$('startBtn').addEventListener('click', () => {
   const name = $('nameInput').value.trim();
   if(!name){
     $('nameInput').style.borderColor = '#FF7A8A';
     $('nameInput').placeholder = '이름을 입력해주세요!';
     return;
   }
-  const btn = $('startBtn');
-  const oldText = btn.textContent;
-  btn.disabled = true;
-  if(isConfigured()){
-    btn.textContent = '최신 문장 확인 중...';
-    await syncQuestionsFromServer();
-  }
-  btn.disabled = false;
-  btn.textContent = oldText;
   studentName = name;
   currentIndex = 0;
-  sessionResults = [];
+  sessionResults = new Array(QUESTIONS.length).fill(null);
   showScreen('screen-question');
   loadQuestion();
 });
@@ -1095,13 +1172,17 @@ $('micBtn').addEventListener('click', () => {
   }
 });
 
+$('skipQuestionBtn').addEventListener('click', skipQuestion);
+
 $('submitBtn').addEventListener('click', async () => {
   const btn = $('submitBtn');
   const notice = $('submitNotice');
   btn.disabled = true;
   btn.textContent = '제출 중...';
-  const avg = Math.round(sessionResults.reduce((a,r)=>a+r.overall,0) / sessionResults.length);
   try{
+    const completed = sessionResults.filter(r => r);
+    const avg = completed.length > 0 ? Math.round(completed.reduce((a,r)=>a+r.overall,0) / completed.length) : 0;
+
     await fetch(SHEET_WEBAPP_URL, {
       method: 'POST',
       mode: 'no-cors',
@@ -1112,7 +1193,7 @@ $('submitBtn').addEventListener('click', async () => {
     $('viewLeaderboardBtn').style.display = 'block';
   } catch(e){
     console.error('submit failed', e);
-    notice.innerHTML = `<div class="notice" style="margin-top:14px;">제출에 실패했어요. 인터넷 연결을 확인하고 다시 시도해주세요.</div>`;
+    notice.innerHTML = `<div class="notice" style="margin-top:14px;">제출에 실패했어요. 다시 눌러 시도해주세요. (인터넷 연결을 확인해주세요)</div>`;
     btn.disabled = false;
     btn.textContent = '제출하기 →';
   }
@@ -1137,9 +1218,7 @@ function fetchJSONP(url){
       if(!settled){ cleanup(); reject(new Error('JSONP load failed')); }
     };
     const sep = url.indexOf('?') === -1 ? '?' : '&';
-    // Apps Script/브라우저 캐시 때문에 예전 문장이 보이는 일을 막기 위해
-    // 매 요청마다 고유한 cache-buster 값을 붙입니다.
-    script.src = url + sep + 'callback=' + cbName + '&_ts=' + Date.now();
+    script.src = url + sep + 'callback=' + cbName;
     document.body.appendChild(script);
     setTimeout(() => {
       if(!settled){ cleanup(); reject(new Error('JSONP timeout')); }
@@ -1270,25 +1349,21 @@ async function saveQuestionsFromInput(){
     console.error('failed to save custom questions', e);
   }
 
-  // 구글시트가 연결되어 있으면 문장 목록을 시트에도 저장합니다.
-  // no-cors POST는 '전송 완료'와 '서버 저장 완료' 시점이 다를 수 있으므로,
-  // 저장 직후 서버에서 같은 문장이 확인될 때까지 짧게 재확인합니다.
-  let serverConfirmed = !isConfigured();
+  // 구글시트가 연결되어 있으면, 문장 목록을 그 시트에도 저장해서
+  // 브라우저 저장공간이 지워져도 항상 최신 문장을 불러올 수 있게 합니다.
   if(isConfigured()){
     try{
       await fetch(SHEET_WEBAPP_URL, {
         method: 'POST',
         mode: 'no-cors',
-        cache: 'no-store',
-        body: JSON.stringify({ action: 'saveQuestions', questions: items, version: Date.now() })
+        body: JSON.stringify({ action: 'saveQuestions', questions: items })
       });
-      serverConfirmed = await waitForServerQuestions(items);
     }catch(e){
       console.error('failed to save questions to sheet', e);
     }
   }
 
-  notice.innerHTML = `<div class="notice" style="background:rgba(110,231,183,0.12);border-color:rgba(110,231,183,0.35);color:#0e4a34;margin-top:12px;">저장됐어요! 총 ${items.length}개 문장으로 설정됐습니다.${isConfigured() ? (serverConfirmed ? ' 다른 기기에도 최신 문장이 바로 반영됩니다.' : ' 이 기기에는 저장됐어요. 서버 반영이 조금 늦을 수 있어 잠시 뒤 다시 확인해 주세요.') : ''}</div>`;
+  notice.innerHTML = `<div class="notice" style="background:rgba(110,231,183,0.12);border-color:rgba(110,231,183,0.35);color:#0e4a34;margin-top:12px;">저장됐어요! 총 ${items.length}개 문장으로 설정됐습니다.${isConfigured() ? ' 구글시트에도 저장돼서 다른 기기에도 그대로 반영돼요.' : ''}</div>`;
   $('saveQuestionsBtn').disabled = false;
   $('resetDefaultQuestionsBtn').disabled = false;
   $('backFromSettingsBtn').disabled = false;
@@ -1466,35 +1541,6 @@ $('resetResultsBtn').addEventListener('click', async () => {
   btn.disabled = false;
 });
 
-
-function sameQuestionList(a, b){
-  if(!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
-  return a.every((q, i) => String(q.en || '').trim() === String(b[i].en || '').trim());
-}
-
-function sleep(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
-
-// Apps Script 저장 직후 다른 기기에서 옛 문장이 보이지 않도록 서버 반영을 확인합니다.
-async function waitForServerQuestions(expected){
-  for(let attempt = 0; attempt < 6; attempt++){
-    if(attempt > 0) await sleep(650 + attempt * 250);
-    try{
-      const data = await fetchJSONP(SHEET_WEBAPP_URL + '?action=questions&fresh=' + Date.now());
-      if(Array.isArray(data) && sameQuestionList(data, expected)){
-        QUESTIONS = data;
-        try{
-          localStorage.setItem('customQuestions', JSON.stringify(data));
-          localStorage.setItem('customQuestionsVersion', String(Date.now()));
-        }catch(e){}
-        return true;
-      }
-    }catch(e){
-      console.warn('question sync confirmation attempt failed', attempt + 1, e);
-    }
-  }
-  return false;
-}
-
 // ---------- init ----------
 if(!speechSupported){
   $('supportNotice').innerHTML = `<div class="notice" style="margin-top:14px;">이 브라우저는 음성 인식(따라 읽기)을 지원하지 않아요. <b>크롬(Chrome)</b> 브라우저에서 열어주세요. 아이폰의 사파리(Safari)에서는 따라 읽기가 작동하지 않을 수 있어요.</div>`;
@@ -1511,10 +1557,9 @@ function isSkipped(){
 // "구글시트 자체"에서 항상 새로 불러옵니다. 이렇게 하면 컴퓨터가
 // 매일 초기화되거나 저장공간이 지워져도 문장이 사라지지 않아요.
 async function syncQuestionsFromServer(){
-  if(!isConfigured()) return false;
+  if(!isConfigured()) return;
   try{
-    // fresh 값을 붙여 브라우저/중간 캐시를 우회합니다.
-    const url = SHEET_WEBAPP_URL + '?action=questions&fresh=' + Date.now();
+    const url = SHEET_WEBAPP_URL + '?action=questions';
     const data = await fetchJSONP(url);
     if(Array.isArray(data) && data.length > 0){
       QUESTIONS = data;
@@ -1522,21 +1567,13 @@ async function syncQuestionsFromServer(){
         localStorage.setItem('customQuestions', JSON.stringify(data));
         localStorage.setItem('customQuestionsVersion', String(Date.now()));
       }catch(e){}
-      return true;
     }
   }catch(e){
     console.error('failed to sync questions from server', e);
     // 실패해도 로컬에 저장된 문장(또는 기본 문장)으로 계속 진행합니다.
   }
-  return false;
 }
-// 첫 화면이 뜬 직후 서버의 최신 문장을 가져옵니다.
 syncQuestionsFromServer();
-// 다른 탭/창을 다녀왔다가 돌아왔을 때도 최신 문장을 다시 확인합니다.
-window.addEventListener('focus', () => { syncQuestionsFromServer(); });
-document.addEventListener('visibilitychange', () => {
-  if(document.visibilityState === 'visible') syncQuestionsFromServer();
-});
 
 function showStartScreenState(){
   if(isConfigured()){
