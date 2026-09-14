@@ -705,6 +705,7 @@ let recognizing = false;
 let recognition = null;
 let finalHandled = false;
 let noSpeechRetryUsed = false;
+let networkRetryUsed = false;
 let attemptCount = 0;
 let recognitionTimeoutId = null;
 
@@ -911,6 +912,7 @@ function startRecording(isRetry){
   if(!isRetry){
     attemptCount++;
     noSpeechRetryUsed = false;
+    networkRetryUsed = false;
     maybeShowSkipButton();
   }
   clearNotice();
@@ -941,7 +943,10 @@ function startRecording(isRetry){
       if(result.isFinal){
         finalAlternatives = [];
         for(let j = 0; j < result.length; j++){
-          finalAlternatives.push(result[j].transcript);
+          finalAlternatives.push({
+            transcript: result[j].transcript,
+            confidence: typeof result[j].confidence === 'number' ? result[j].confidence : null
+          });
         }
       } else {
         interim += result[0].transcript;
@@ -972,6 +977,16 @@ function startRecording(isRetry){
         return;
       }
       showNotice("음성이 들리지 않았어요. 마이크에 가까이서 다시 말해보세요.");
+      $('micStatus').textContent = "다시 눌러서 시도해보세요";
+    } else if(event.error === 'network'){
+      if(!networkRetryUsed){
+        // 인터넷/구글 서버 쪽 일시적인 문제일 수 있어 한 번 자동으로 다시 시도합니다.
+        networkRetryUsed = true;
+        $('micStatus').textContent = "다시 연결하는 중...";
+        setTimeout(() => { if(!finalHandled) startRecording(true); }, 500);
+        return;
+      }
+      showNotice("인터넷 연결이 불안정해서 음성 인식이 안 됐어요. Wi-Fi 상태를 확인하고 다시 시도해주세요. 계속 안 되면 아래 '건너뛰기'를 이용해주세요.");
       $('micStatus').textContent = "다시 눌러서 시도해보세요";
     } else if(event.error === 'aborted'){
       $('micStatus').textContent = "버튼을 눌러 다시 시도해보세요";
@@ -1006,26 +1021,41 @@ function stopRecording(){
   }
 }
 
-function finishRecording(transcriptOrAlternatives){
+function finishRecording(alternativesRaw){
   $('micStatus').textContent = "채점 완료!";
 
   // maxAlternatives로 여러 인식 후보를 받았으면, 목표 문장과 가장 잘 맞는
   // 후보를 골라 채점합니다. 이렇게 하면 1순위 인식 결과가 살짝 어긋나도
   // 더 정확했던 다른 후보로 점수를 매길 수 있어요.
-  const alternatives = Array.isArray(transcriptOrAlternatives) ? transcriptOrAlternatives : [transcriptOrAlternatives];
-  let bestTranscript = alternatives[0] || "";
+  const alternatives = Array.isArray(alternativesRaw) ? alternativesRaw : [{ transcript: alternativesRaw, confidence: null }];
+  let bestTranscript = alternatives[0] ? alternatives[0].transcript : "";
+  let bestConfidence = alternatives[0] ? alternatives[0].confidence : null;
   let bestResults = scoreAgainstTranscript(QUESTIONS[currentIndex].en, bestTranscript);
   let bestOverall = overallFrom(bestResults);
 
   for(let i = 1; i < alternatives.length; i++){
-    const candidateResults = scoreAgainstTranscript(QUESTIONS[currentIndex].en, alternatives[i]);
+    const candidateResults = scoreAgainstTranscript(QUESTIONS[currentIndex].en, alternatives[i].transcript);
     const candidateOverall = overallFrom(candidateResults);
     if(candidateOverall > bestOverall){
       bestOverall = candidateOverall;
       bestResults = candidateResults;
-      bestTranscript = alternatives[i];
+      bestTranscript = alternatives[i].transcript;
+      bestConfidence = alternatives[i].confidence;
     }
   }
+
+  // 텍스트가 완벽히 일치해도, 음성 인식 엔진이 그 인식 결과에 확신이
+  // 낮았다면(예: 발음이 또렷하지 않아서 추측성으로 맞춘 경우) 점수를
+  // 살짝 깎아서, "인식은 됐지만 발음이 완벽하진 않았다"는 걸 반영합니다.
+  // 단어 칩과 전체 점수가 서로 안 맞아 보이지 않도록, 단어별 점수에도 같이 적용합니다.
+  if(typeof bestConfidence === 'number' && bestConfidence > 0){
+    const confidenceFactor = 0.82 + 0.18 * Math.min(1, bestConfidence);
+    bestResults = bestResults.map(w => ({ ...w, score: Math.round(w.score * confidenceFactor) }));
+  } else if(bestOverall >= 100){
+    // 브라우저가 확신도 값을 안 줄 때도, 완벽한 만점만 아주 살짝 눌러줍니다.
+    bestResults = bestResults.map(w => ({ ...w, score: 97 }));
+  }
+  const finalOverall = overallFrom(bestResults);
 
   updateLiveHighlight(bestTranscript);
 
@@ -1033,10 +1063,10 @@ function finishRecording(transcriptOrAlternatives){
     question: QUESTIONS[currentIndex].en,
     transcript: bestTranscript,
     wordResults: bestResults,
-    overall: bestOverall
+    overall: finalOverall
   };
 
-  renderResultPanel(bestResults, bestOverall, bestTranscript);
+  renderResultPanel(bestResults, finalOverall, bestTranscript);
 }
 
 function renderResultPanel(results, overall, transcript){
