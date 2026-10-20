@@ -697,6 +697,19 @@ let SHEET_WEBAPP_URL = loadSheetUrl();
 // 결과 초기화 버튼을 누를 때 물어보는 비밀번호 (학생이 실수로 초기화하지 못하도록 보호).
 // 원하시는 비밀번호로 바꿔서 쓰세요.
 const RESET_PASSCODE = "2026";
+const SETTINGS_PASSCODE = "0634";
+let settingsUnlocked = false;
+function askSettingsPasscode(){
+  if(settingsUnlocked) return true;
+  const input = window.prompt('선생님 전용 화면이에요. 문장 설정 비밀번호를 입력해주세요.');
+  if(input === null) return false;
+  if(input.trim() !== SETTINGS_PASSCODE){
+    window.alert('비밀번호가 일치하지 않아요.');
+    return false;
+  }
+  settingsUnlocked = true;
+  return true;
+}
 
 let studentName = "";
 let currentIndex = 0;
@@ -1612,6 +1625,7 @@ function updateBackButtonState(){
 $('questionsInput').addEventListener('input', updateBackButtonState);
 
 $('openSettingsBtn').addEventListener('click', () => {
+  if(!askSettingsPasscode()) return;
   $('questionsInput').value = questionsToText(QUESTIONS);
   $('settingsNotice').innerHTML = '';
   updateBackButtonState();
@@ -1834,6 +1848,7 @@ $('backToCoverBtn').addEventListener('click', () => {
 });
 
 $('goToNoPrepBtn').addEventListener('click', () => {
+  if(!askSettingsPasscode()) return;
   try{ localStorage.setItem('skipResults', 'true'); }catch(e){ console.error(e); }
   showStartScreenState();
   $('questionsInput').value = questionsToText(QUESTIONS);
