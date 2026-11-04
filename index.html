@@ -812,8 +812,53 @@ HOMOPHONE_GROUPS.forEach(group => {
   group.forEach(w => { HOMOPHONE_MAP[w] = group[0]; });
 });
 
+// ---------- 숫자 → 영어 단어 ----------
+// 음성 인식은 "ten"을 "10"으로 받아쓰는 경우가 많아서, 숫자를 영어 단어로 바꿔 비교합니다.
+const NUM_ONES = ["zero","one","two","three","four","five","six","seven","eight","nine","ten",
+  "eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"];
+const NUM_TENS = ["","","twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"];
+function numToWords(n){
+  n = parseInt(n,10);
+  if(isNaN(n)) return "";
+  if(n < 20) return NUM_ONES[n];
+  if(n < 100) return NUM_TENS[Math.floor(n/10)] + (n%10 ? NUM_ONES[n%10] : "");
+  if(n < 1000) return NUM_ONES[Math.floor(n/100)] + "hundred" + (n%100 ? numToWords(n%100) : "");
+  if(n < 10000) return numToWords(Math.floor(n/1000)) + "thousand" + (n%1000 ? numToWords(n%1000) : "");
+  return String(n);
+}
+const ORDINAL_FIX = {one:"first",two:"second",three:"third",five:"fifth",eight:"eighth",nine:"ninth",twelve:"twelfth"};
+function ordinalWords(n){
+  const w = numToWords(n);
+  for(const k in ORDINAL_FIX){ if(w.endsWith(k)) return w.slice(0, -k.length) + ORDINAL_FIX[k]; }
+  if(w.endsWith("y")) return w.slice(0,-1) + "ieth";
+  return w + "th";
+}
+// 축약형: 학생은 "I'm"이라고 말했는데 인식은 "I am"으로 나오는 경우(또는 반대)를 맞춰줍니다.
+const CONTRACTIONS = {
+  im:"i am", youre:"you are", hes:"he is", shes:"she is", its:"it is", were:"we are", theyre:"they are",
+  ive:"i have", youve:"you have", weve:"we have", theyve:"they have",
+  ill:"i will", youll:"you will", hell:"he will", shell:"she will", well:"we will", theyll:"they will",
+  id:"i would", youd:"you would", dont:"do not", doesnt:"does not", didnt:"did not",
+  isnt:"is not", arent:"are not", wasnt:"was not", werent:"were not", cant:"can not",
+  cannot:"can not", wont:"will not", couldnt:"could not", shouldnt:"should not", wouldnt:"would not",
+  havent:"have not", hasnt:"has not", thats:"that is", whats:"what is", wheres:"where is",
+  whos:"who is", hows:"how is", theres:"there is", heres:"here is", lets:"let us"
+};
+// 축약형으로 오해하기 쉬운 진짜 단어(were, well, its, ill, id, hell, shell, lets)는
+// 인식 결과 쪽에서 함부로 풀지 않습니다.
+const AMBIGUOUS_CONTRACTIONS = new Set(["were","well","its","ill","id","hell","shell","lets","cannot"]);
+
+function cleanToken(w){
+  let s = String(w).toLowerCase().replace(/[’‘`]/g,"'");
+  s = s.replace(/^[^a-z0-9]+|[^a-z0-9]+$/g,"");
+  let m;
+  if((m = s.match(/^(\d+)(st|nd|rd|th)$/))) return ordinalWords(m[1]);
+  if((m = s.match(/^(\d+):(\d+)$/))) return numToWords(m[1]) + (parseInt(m[2],10) ? numToWords(m[2]) : "oclock");
+  if(/^\d[\d,]*$/.test(s)) return numToWords(s.replace(/,/g,""));
+  return s.replace(/[^a-z]/g,"");
+}
 function normalizeWord(w){
-  const base = w.toLowerCase().replace(/[^a-z]/g,"");
+  const base = cleanToken(w);
   return HOMOPHONE_MAP[base] || base;
 }
 function splitWords(sentence){
@@ -880,23 +925,54 @@ function phoneticKey(w){
 function scoreAgainstTranscript(targetSentence, transcript){
   const rawTargetWords = targetSentence.split(/\s+/).filter(w => normalizeWord(w).length > 0);
   const targetWords = splitWords(targetSentence);
-  const heardWords = splitWords(transcript);
+  const targetSet = new Set(targetWords);
+  // 인식 결과에 축약형(I'm 등)이 있는데 목표 문장은 풀어 쓴 형태(I am)라면 풀어서 비교합니다.
+  // 목표의 두 단어(ice cream)가 한 단어(icecream)로 들린 경우를 위해 쪼개는 표를 만듭니다.
+  const bigramSplit = {};
+  for(let i = 0; i + 1 < targetWords.length; i++){
+    bigramSplit[targetWords[i] + targetWords[i+1]] = [targetWords[i], targetWords[i+1]];
+  }
+  const heardWords = [];
+  splitWords(transcript || "").forEach(h => {
+    const exp = CONTRACTIONS[h];
+    if(exp && !targetSet.has(h) && !AMBIGUOUS_CONTRACTIONS.has(h)) heardWords.push(...exp.split(" ").map(normalizeWord));
+    else if(bigramSplit[h] && !targetSet.has(h)) heardWords.push(...bigramSplit[h]);
+    else heardWords.push(h);
+  });
   const nameFlags = rawTargetWords.map((w, i) => isNameWord(w, i, rawTargetWords));
   const results = [];
   let si = 0;
   for(const tw of targetWords){
-    let bestIdx = -1, bestScore = -1;
-    const windowEnd = Math.min(heardWords.length, si + 4);
+    let bestIdx = -1, bestScore = -1, bestUsed = 1, bestHeard = null;
+    const windowEnd = Math.min(heardWords.length, si + 6);
     for(let k = si; k < windowEnd; k++){
-      const sim = wordSimilarity(tw, heardWords[k]);
-      if(sim > bestScore){ bestScore = sim; bestIdx = k; }
+      const h = heardWords[k];
+      let sim = wordSimilarity(tw, h);
+      let used = 1, heardText = h;
+      // 소리 뼈대가 같으면(철자만 살짝 다른 경우) 정확히 말한 것으로 봅니다.
+      if(sim < 92 && tw.length >= 3){
+        const tk = phoneticKey(tw), hk = phoneticKey(h);
+        if(tk.length >= 1 && tk === hk && tw[0] === h[0]) sim = Math.max(sim, 92);
+      }
+      if(k + 1 < heardWords.length){
+        const h2 = heardWords[k+1];
+        // 목표가 축약형(I'm)인데 "i am"처럼 두 단어로 들린 경우
+        if(CONTRACTIONS[tw] && CONTRACTIONS[tw].split(" ").map(normalizeWord).join(" ") === h + " " + h2){ sim = 100; used = 2; heardText = h + " " + h2; }
+        // "ice cream" ↔ "icecream", "twenty five" ↔ "twentyfive"처럼 붙거나 떨어져 들린 경우
+        const joinedSim = wordSimilarity(tw, h + h2);
+        if(joinedSim > sim && joinedSim >= 85){ sim = joinedSim; used = 2; heardText = h + " " + h2; }
+      }
+      // 앞쪽(순서에 맞는) 후보를 조금 더 우선합니다.
+      const adj = sim - (k - si) * 2;
+      const bestAdj = bestScore - (bestIdx - si) * 2;
+      if(bestIdx === -1 || adj > bestAdj){ bestScore = sim; bestIdx = k; bestUsed = used; bestHeard = heardText; }
     }
-    if(bestIdx === -1 || bestScore < 42){
+    if(bestIdx === -1 || bestScore < 40){
       results.push({word: tw, score: 0, status: "bad", matched: null});
     } else {
-      const status = bestScore >= 80 ? "good" : "bad";
-      results.push({word: tw, score: bestScore, status, matched: heardWords[bestIdx]});
-      si = bestIdx + 1;
+      const status = bestScore >= 75 ? "good" : "bad";
+      results.push({word: tw, score: bestScore, status, matched: bestHeard});
+      si = bestIdx + bestUsed;
     }
   }
 
@@ -1017,8 +1093,18 @@ function buildRecognition(){
   r.lang = 'en-US';
   r.interimResults = true;
   r.maxAlternatives = 5;
-  r.continuous = false;
+  // 아이들은 문장 중간에 잠깐 쉬는 경우가 많아요. continuous=false면 그 순간 녹음이
+  // 끝나버려서 뒷부분이 잘립니다. 계속 듣다가 조용해지면 우리가 직접 끝냅니다.
+  r.continuous = true;
   return r;
+}
+let finalSegments = [];      // 확정된 인식 구간들(구간마다 여러 후보)
+let silenceTimerId = null;
+function clearSilenceTimer(){
+  if(silenceTimerId){ clearTimeout(silenceTimerId); silenceTimerId = null; }
+}
+function segmentsTopText(){
+  return finalSegments.filter(Boolean).map(s => s[0].transcript).join(' ').trim();
 }
 
 function renderSentenceWords(){
@@ -1043,6 +1129,7 @@ function updateLiveHighlight(transcript){
 }
 
 function clearRecognitionTimeout(){
+  clearSilenceTimer();
   if(recognitionTimeoutId){
     clearTimeout(recognitionTimeoutId);
     recognitionTimeoutId = null;
@@ -1074,6 +1161,8 @@ function startRecording(isRetry){
   renderSentenceWords();
   finalHandled = false;
   lastInterim = "";
+  if(!isRetry) finalSegments = [];
+  clearSilenceTimer();
   recognition = buildRecognition();
 
   recognition.onstart = () => {
@@ -1087,32 +1176,45 @@ function startRecording(isRetry){
       if(recognizing && !finalHandled){
         try{ recognition.stop(); }catch(e){}
       }
-    }, 10000);
+    }, 15000);
   };
 
+  const segBase = finalSegments.length;
+  const thisRecognition = recognition;
   recognition.onresult = (event) => {
+    if(finalHandled) return;
     let interim = "";
-    let finalAlternatives = null;
+    let gotFinal = false;
     for(let i = event.resultIndex; i < event.results.length; i++){
       const result = event.results[i];
       if(result.isFinal){
-        finalAlternatives = [];
+        const alts = [];
         for(let j = 0; j < result.length; j++){
-          finalAlternatives.push({
-            transcript: result[j].transcript,
+          if(!result[j].transcript || !result[j].transcript.trim()) continue;
+          alts.push({
+            transcript: result[j].transcript.trim(),
             confidence: typeof result[j].confidence === 'number' ? result[j].confidence : null
           });
         }
+        if(alts.length){ finalSegments[segBase + i] = alts; gotFinal = true; }
       } else {
         interim += result[0].transcript;
       }
     }
-    if(interim){ lastInterim = interim; updateLiveHighlight(interim); }
-    if(finalAlternatives && !finalHandled){
-      finalHandled = true;
-      clearRecognitionTimeout();
-      finishRecording(finalAlternatives);
-    }
+    const soFar = (segmentsTopText() + ' ' + interim).trim();
+    lastInterim = interim;
+    if(soFar) updateLiveHighlight(soFar);
+
+    // 조용해지면 녹음을 끝냅니다. 문장을 다 말했으면 빨리, 아니면 조금 더 기다려 줍니다.
+    clearSilenceTimer();
+    const res = scoreAgainstTranscript(QUESTIONS[currentIndex].en, soFar);
+    const allHeard = res.length > 0 && res.every(r => r.matched);
+    const wait = allHeard ? (gotFinal ? 300 : 900) : (gotFinal ? 1600 : 2200);
+    silenceTimerId = setTimeout(() => {
+      if(recognition === thisRecognition && recognizing && !finalHandled){
+        try{ thisRecognition.stop(); }catch(e){}
+      }
+    }, wait);
   };
 
   let hadError = false;
@@ -1121,6 +1223,12 @@ function startRecording(isRetry){
     recognizing = false;
     $('micBtn').classList.remove('recording');
     clearRecognitionTimeout();
+    if(finalHandled) return;
+    // 이미 들은 내용이 있으면 오류 안내 대신 그걸로 채점합니다(onend에서 처리).
+    const heardSomething = finalSegments.some(Boolean) || (lastInterim && lastInterim.trim());
+    if(heardSomething && event.error !== 'not-allowed' && event.error !== 'service-not-allowed' && event.error !== 'aborted'){
+      return;
+    }
 
     if(event.error === 'not-allowed' || event.error === 'service-not-allowed'){
       showNotice("마이크 권한이 차단되어 있어요. 주소창의 자물쇠 아이콘을 눌러 마이크를 '허용'으로 바꾸고 새로고침한 뒤 다시 시도해주세요.");
@@ -1158,17 +1266,20 @@ function startRecording(isRetry){
     recognizing = false;
     $('micBtn').classList.remove('recording');
     clearRecognitionTimeout();
-    if(!finalHandled && hadError && !(lastInterim && lastInterim.trim())){
+    if(recognition !== thisRecognition) return; // 이미 새로 듣기 시작했어요.
+    const segs = finalSegments.filter(Boolean);
+    const interimLeft = lastInterim && lastInterim.trim() ? lastInterim.trim() : "";
+    if(!finalHandled && hadError && !segs.length && !interimLeft){
       return; // 오류 처리(onerror)가 이미 안내/재시도를 했어요.
     }
     if(!finalHandled){
-      // 인식이 "최종 확정" 없이 끝나는 경우가 있어요(말이 중간에 끊기거나 조용히 종료).
-      // 이때 실시간으로 들은 내용이 있으면 그걸로 채점해서, 말했는데도 "인식 안 됨"이 뜨는 걸 막습니다.
-      if(lastInterim && lastInterim.trim()){
+      // 확정된 구간 + 아직 확정 안 된 마지막 말까지 모아서 채점합니다.
+      if(segs.length || interimLeft){
         finalHandled = true;
-        const t = lastInterim;
+        const all = segs.slice();
+        if(interimLeft) all.push([{ transcript: interimLeft, confidence: null }]);
         lastInterim = "";
-        finishRecording([{ transcript: t, confidence: null }]);
+        finishRecording(all);
         return;
       }
       // 아무 내용도 못 들었으면 한 번은 조용히 자동으로 다시 듣습니다.
@@ -1204,33 +1315,44 @@ function finishRecording(alternativesRaw){
   // maxAlternatives로 여러 인식 후보를 받았으면, 목표 문장과 가장 잘 맞는
   // 후보를 골라 채점합니다. 이렇게 하면 1순위 인식 결과가 살짝 어긋나도
   // 더 정확했던 다른 후보로 점수를 매길 수 있어요.
-  const alternatives = Array.isArray(alternativesRaw) ? alternativesRaw : [{ transcript: alternativesRaw, confidence: null }];
-  let bestTranscript = alternatives[0] ? alternatives[0].transcript : "";
-  let bestConfidence = alternatives[0] ? alternatives[0].confidence : null;
-  let bestResults = scoreAgainstTranscript(QUESTIONS[currentIndex].en, bestTranscript);
-  let bestOverall = overallFrom(bestResults);
+  // 입력: 구간 배열(구간마다 후보 배열). 예전 형식(후보 배열 하나)도 받아줍니다.
+  let segments;
+  if(!Array.isArray(alternativesRaw)) segments = [[{ transcript: String(alternativesRaw || ""), confidence: null }]];
+  else if(alternativesRaw.length && !Array.isArray(alternativesRaw[0])) segments = [alternativesRaw];
+  else segments = alternativesRaw.filter(s => Array.isArray(s) && s.length);
+  if(!segments.length) segments = [[{ transcript: "", confidence: null }]];
 
-  for(let i = 1; i < alternatives.length; i++){
-    const candidateResults = scoreAgainstTranscript(QUESTIONS[currentIndex].en, alternatives[i].transcript);
-    const candidateOverall = overallFrom(candidateResults);
-    if(candidateOverall > bestOverall){
-      bestOverall = candidateOverall;
-      bestResults = candidateResults;
-      bestTranscript = alternatives[i].transcript;
-      bestConfidence = alternatives[i].confidence;
-    }
+  const target = QUESTIONS[currentIndex].en;
+  const choice = segments.map(() => 0);
+  const build = () => segments.map((s, i) => s[choice[i]].transcript).join(' ').trim();
+  let bestTranscript = build();
+  let bestResults = scoreAgainstTranscript(target, bestTranscript);
+  let bestOverall = overallFrom(bestResults);
+  // 구간마다 여러 인식 후보 중 목표 문장과 가장 잘 맞는 것을 골라 조합합니다.
+  for(let pass = 0; pass < 2; pass++){
+    segments.forEach((seg, i) => {
+      for(let j = 0; j < seg.length; j++){
+        if(j === choice[i]) continue;
+        const prev = choice[i];
+        choice[i] = j;
+        const t = build();
+        const r = scoreAgainstTranscript(target, t);
+        const o = overallFrom(r);
+        if(o > bestOverall){ bestOverall = o; bestResults = r; bestTranscript = t; }
+        else choice[i] = prev;
+      }
+    });
   }
 
-  // 텍스트가 완벽히 일치해도, 음성 인식 엔진이 그 인식 결과에 확신이
-  // 낮았다면(예: 발음이 또렷하지 않아서 추측성으로 맞춘 경우) 점수를
-  // 살짝 깎아서, "인식은 됐지만 발음이 완벽하진 않았다"는 걸 반영합니다.
-  // 단어 칩과 전체 점수가 서로 안 맞아 보이지 않도록, 단어별 점수에도 같이 적용합니다.
-  if(typeof bestConfidence === 'number' && bestConfidence > 0){
-    const confidenceFactor = 0.82 + 0.18 * Math.min(1, bestConfidence);
-    bestResults = bestResults.map(w => ({ ...w, score: Math.round(w.score * confidenceFactor) }));
-  } else if(bestOverall >= 100){
-    // 브라우저가 확신도 값을 안 줄 때도, 완벽한 만점만 아주 살짝 눌러줍니다.
-    bestResults = bestResults.map(w => ({ ...w, score: 97 }));
+  // 인식 엔진의 확신도가 많이 낮을 때만(발음이 흐릿해서 추측으로 맞춘 경우) 살짝 깎습니다.
+  // 또렷하게 말하면 확신도가 높게 나와서 100점도 받을 수 있어요.
+  const confs = segments.map((s, i) => s[choice[i]].confidence).filter(c => typeof c === 'number' && c > 0);
+  if(confs.length){
+    const conf = confs.reduce((a, b) => a + b, 0) / confs.length;
+    const confidenceFactor = conf >= 0.8 ? 1 : 0.9 + 0.1 * (conf / 0.8);
+    if(confidenceFactor < 1){
+      bestResults = bestResults.map(w => ({ ...w, score: Math.round(w.score * confidenceFactor) }));
+    }
   }
   const finalOverall = overallFrom(bestResults);
 
